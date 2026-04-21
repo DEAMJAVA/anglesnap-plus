@@ -5,17 +5,15 @@ import me.contaria.anglesnap.config.AngleSnapConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.option.StickyKeyBinding;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
@@ -35,6 +33,7 @@ public class AngleSnap implements ClientModInitializer {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final AngleSnapConfig CONFIG = new AngleSnapConfig();
 
+    public static KeyBinding.Category keybindCategory;
     public static KeyBinding openMenu;
     public static KeyBinding openOverlay;
     public static KeyBinding cameraPositions;
@@ -44,24 +43,27 @@ public class AngleSnap implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        keybindCategory = KeyBinding.Category.create(Identifier.of("anglesnap", "main"));
+
         openMenu = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "anglesnap.key.openmenu",
                 GLFW.GLFW_KEY_F6,
-                "anglesnap.key"
+                keybindCategory
         ));
         openOverlay = KeyBindingHelper.registerKeyBinding(new StickyKeyBinding(
                 "anglesnap.key.openoverlay",
                 GLFW.GLFW_KEY_F7,
-                "anglesnap.key",
-                () -> true
+                keybindCategory,
+                () -> true,
+                true
         ));
         cameraPositions = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "anglesnap.key.camerapositions",
                 GLFW.GLFW_KEY_F8,
-                "anglesnap.key"
+                keybindCategory
         ));
 
-        WorldRenderEvents.LAST.register(AngleSnap::renderOverlay);
+        WorldRenderEvents.END_MAIN.register(AngleSnap::renderOverlay);
         HudElementRegistry.addFirst(Identifier.of("anglesnap", "overlay"), AngleSnap::renderHud);
 
         ClientPlayConnectionEvents.JOIN.register((networkHandler, packetSender, client) -> {
@@ -104,7 +106,7 @@ public class AngleSnap implements ClientModInitializer {
                 MathHelper.wrapDegrees(angle.pitch),
                 MathHelper.wrapDegrees(angle.yaw + 180.0f)
         ).multiply(-1.0, 1.0, -1.0).toVector3f();
-        Quaternionf rotation = context.camera().getRotation();
+        Quaternionf rotation = context.gameRenderer().getCamera().getRotation();
 
         drawIcon(context, pos, rotation, angle, markerScale);
         if (!angle.name.isEmpty()) {
@@ -117,7 +119,7 @@ public class AngleSnap implements ClientModInitializer {
             return;
         }
 
-        MatrixStack matrices = Objects.requireNonNull(context.matrixStack());
+        MatrixStack matrices = Objects.requireNonNull(context.matrices());
         matrices.push();
         matrices.translate(pos.x(), pos.y(), pos.z());
         matrices.multiply(rotation);
@@ -125,12 +127,12 @@ public class AngleSnap implements ClientModInitializer {
 
         Matrix4f matrix4f = matrices.peek().getPositionMatrix();
         MinecraftClient client = MinecraftClient.getInstance();
-        RenderLayer layer = RenderLayer.getCelestial(angle.getIcon());
+        RenderLayer layer = RenderLayers.entityTranslucent(angle.getIcon()); // TODO: test it!
         VertexConsumer consumer = client.getBufferBuilders().getEffectVertexConsumers().getBuffer(layer);
-        consumer.vertex(matrix4f, -1.0f, -1.0f, 0.0f).color(angle.color).texture(0.0f, 0.0f);
-        consumer.vertex(matrix4f, -1.0f, 1.0f, 0.0f).color(angle.color).texture(0.0f, 1.0f);
-        consumer.vertex(matrix4f, 1.0f, 1.0f, 0.0f).color(angle.color).texture(1.0f, 1.0f);
-        consumer.vertex(matrix4f, 1.0f, -1.0f, 0.0f).color(angle.color).texture(1.0f, 0.0f);
+        consumer.vertex(matrix4f, -1.0f, -1.0f, 0.0f).color(angle.color).texture(0.0f, 0.0f).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 0, 1);;
+        consumer.vertex(matrix4f, -1.0f, 1.0f, 0.0f).color(angle.color).texture(0.0f, 1.0f).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 0, 1);;
+        consumer.vertex(matrix4f, 1.0f, 1.0f, 0.0f).color(angle.color).texture(1.0f, 1.0f).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 0, 1);;
+        consumer.vertex(matrix4f, 1.0f, -1.0f, 0.0f).color(angle.color).texture(1.0f, 0.0f).overlay(OverlayTexture.DEFAULT_UV).light(LightmapTextureManager.MAX_LIGHT_COORDINATE).normal(0, 0, 1);;
 
         matrices.scale(1.0f / scale, 1.0f / -scale, 1.0f / scale);
         matrices.pop();
@@ -141,7 +143,7 @@ public class AngleSnap implements ClientModInitializer {
             return;
         }
 
-        MatrixStack matrices = Objects.requireNonNull(context.matrixStack());
+        MatrixStack matrices = Objects.requireNonNull(context.matrices());
         matrices.push();
         matrices.translate(pos.x(), pos.y(), pos.z());
         matrices.multiply(rotation);

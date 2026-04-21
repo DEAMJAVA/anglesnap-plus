@@ -5,13 +5,12 @@ import me.contaria.anglesnap.CameraPosEntry;
 import me.contaria.anglesnap.gui.screen.IconButtonWidget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.ElementListWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.*;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
@@ -37,9 +36,14 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
 
     private static final int HOVERED_COLOR = ColorHelper.getArgb(100, 200, 200, 200);
 
-    public CameraSnapListWidget(MinecraftClient minecraftClient, int width, int height, int y) {
-        super(minecraftClient, width, height, y, 20, 25);
+    private final CameraSnapScreen cameraSnapScreen;
 
+    public CameraSnapListWidget(MinecraftClient minecraftClient, CameraSnapScreen cameraSnapScreen, int width, int height, int y) {
+        super(minecraftClient, width, height, y, 20);
+
+        this.cameraSnapScreen = cameraSnapScreen;
+
+        this.addEntry(new Header(this.cameraSnapScreen, NAME_TEXT, X_TEXT, Y_TEXT, Z_TEXT));
         for (CameraPosEntry pos : AngleSnap.CONFIG.getCameraPositions()) {
             this.addEntry(new Entry(pos));
         }
@@ -59,15 +63,6 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
     @Override
     protected int getScrollbarX() {
         return this.width - 6;
-    }
-
-    @Override
-    protected void renderHeader(DrawContext context, int x, int y) {
-        TextRenderer textRenderer = this.client.textRenderer;
-        context.drawText(textRenderer, NAME_TEXT, x + 5, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, X_TEXT, x + 5 + 5 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, Y_TEXT, x + 5 + 7 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, Z_TEXT, x + 5 + 9 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
     }
 
     public abstract static class AbstractEntry extends ElementListWidget.Entry<AbstractEntry> {
@@ -106,6 +101,39 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
             widget.setX(x);
             widget.setY(y);
             widget.render(context, mouseX, mouseY, tickDelta);
+        }
+    }
+
+    public class Header extends AbstractEntry {
+        private final Screen parent;
+        private final TextWidget nameText;
+        private final TextWidget xText;
+        private final TextWidget yText;
+        private final TextWidget zText;
+
+        public Header(Screen parent, Text nameText, Text xText, Text yText, Text zText) {
+            this.parent = parent;
+            this.nameText = new TextWidget(nameText, this.parent.getTextRenderer());
+            this.xText = new TextWidget(xText, this.parent.getTextRenderer());
+            this.yText = new TextWidget(yText, this.parent.getTextRenderer());
+            this.zText = new TextWidget(zText, this.parent.getTextRenderer());
+        }
+
+        @Override
+        public List<? extends Selectable> selectableChildren() {
+            return List.of(nameText, xText, yText, zText);
+        }
+
+        @Override
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float deltaTicks) {
+            this.nameText.setPosition(this.getContentX() + 5, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.nameText.render(context, mouseX, mouseY, deltaTicks);
+            this.xText.setPosition(this.getContentX() + 5 + 5 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.xText.render(context, mouseX, mouseY, deltaTicks);
+            this.yText.setPosition(this.getContentX() + 5 + 7 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.yText.render(context, mouseX, mouseY, deltaTicks);
+            this.zText.setPosition(this.getContentX() + 5 + 9 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.zText.render(context, mouseX, mouseY, deltaTicks);
         }
     }
 
@@ -240,7 +268,12 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            int x = this.getContentX();
+            int y = this.getContentY();
+            int entryWidth = this.getContentWidth();
+            int entryHeight = this.getContentHeight();
+
             if (hovered) {
                 context.fill(x, y, x + entryWidth, y + entryHeight, HOVERED_COLOR);
             }
@@ -287,11 +320,11 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (super.mouseClicked(mouseX, mouseY, button)) {
+        public boolean mouseClicked(Click click, boolean doubled) {
+            if (super.mouseClicked(click, doubled)) {
                 return true;
             }
-            if (!this.editing && button == 0) {
+            if (!this.editing && click.button() == 0) {
                 AngleSnap.currentCameraPos = this.pos;
                 return true;
             }
@@ -307,8 +340,8 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            this.renderWidgetAt(context, mouseX, mouseY, tickDelta, this.add, x + 5, y + (entryHeight - this.client.textRenderer.fontHeight) / 2);
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            this.renderWidgetAt(context, mouseX, mouseY, tickDelta, this.add, this.getContentX() + 5, this.getContentY() + (this.getContentHeight() - this.client.textRenderer.fontHeight) / 2);
         }
 
         private void add() {
@@ -320,8 +353,8 @@ public class CameraSnapListWidget extends ElementListWidget<CameraSnapListWidget
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            super.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(Click click, boolean doubled) {
+            super.mouseClicked(click, doubled);
             return false;
         }
     }

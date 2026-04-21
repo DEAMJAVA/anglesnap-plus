@@ -25,9 +25,10 @@ public class CameraSnapScreen extends Screen {
 
     @Override
     protected void init() {
-        this.addDrawableChild(new TextWidget(0, 10, this.width, 15, this.title, this.textRenderer).alignCenter());
+        int i = this.textRenderer.getWidth(this.title);
+        this.addDrawableChild(new TextWidget(this.width / 2 + i / 2, 10, this.width, 15, this.title, this.textRenderer));
         this.addDrawableChild(new IconButtonWidget(this.width - 26, 10, CONFIGURE_TEXT, button -> MinecraftClient.getInstance().setScreen(new AngleSnapConfigScreen(this)), CONFIGURE_TEXTURE));
-        this.addDrawableChild(new CameraSnapListWidget(this.client, this.width, this.height - 70, 35));
+        this.addDrawableChild(new CameraSnapListWidget(this.client, this, this.width, this.height - 70, 35));
         this.addDrawableChild(ButtonWidget.builder(ScreenTexts.DONE, button -> this.close()).dimensions(this.width / 2 - 100, this.height - 27, 200, 20).build());
     }
 

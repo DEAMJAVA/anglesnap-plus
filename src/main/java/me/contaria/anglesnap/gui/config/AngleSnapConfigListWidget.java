@@ -19,7 +19,7 @@ public class AngleSnapConfigListWidget extends ElementListWidget<AngleSnapConfig
     private static final int HOVERED_COLOR = ColorHelper.getArgb(100, 200, 200, 200);
 
     public AngleSnapConfigListWidget(MinecraftClient minecraftClient, int width, int height, int y) {
-        super(minecraftClient, width, height, y, 24, 0);
+        super(minecraftClient, width, height, y, 24);
 
         for (Option<?> option : AngleSnap.CONFIG.getOptions()) {
             if (option.hasWidget()) {
@@ -94,7 +94,12 @@ public class AngleSnapConfigListWidget extends ElementListWidget<AngleSnapConfig
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            int x = this.getContentX();
+            int y = this.getContentY();
+            int entryWidth = this.getContentWidth();
+            int entryHeight = this.getContentHeight();
+
             TextRenderer textRenderer = this.client.textRenderer;
             if (hovered) {
                 context.fill(x, y, x + entryWidth, y + entryHeight, HOVERED_COLOR);
@@ -102,11 +107,6 @@ public class AngleSnapConfigListWidget extends ElementListWidget<AngleSnapConfig
             int textY = y + (entryHeight - textRenderer.fontHeight + 1) / 2;
             context.drawText(textRenderer, this.option.getName(), x + 5, textY, Colors.WHITE, true);
             this.renderWidgetAt(context, mouseX, mouseY, tickDelta, this.widget, x + 155, y);
-        }
-
-        @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return super.mouseClicked(mouseX, mouseY, button);
         }
     }
 }

@@ -4,13 +4,12 @@ import me.contaria.anglesnap.AngleEntry;
 import me.contaria.anglesnap.AngleSnap;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.ElementListWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.*;
 import net.minecraft.text.Text;
 import net.minecraft.util.Colors;
 import net.minecraft.util.Identifier;
@@ -42,8 +41,10 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
     private final AngleSnapScreen parent;
 
     public AngleSnapListWidget(MinecraftClient minecraftClient, int width, int height, int y, AngleSnapScreen parent) {
-        super(minecraftClient, width, height, y, 20, 25);
+        super(minecraftClient, width, height, y, 20);
         this.parent = parent;
+
+        this.addEntry(new Header(this.parent, NAME_TEXT, YAW_TEXT, PITCH_TEXT, ICON_TEXT, COLOR_TEXT));
 
         for (AngleEntry angle : AngleSnap.CONFIG.getAngles()) {
             this.addEntry(new Entry(angle));
@@ -64,16 +65,6 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
     @Override
     protected int getScrollbarX() {
         return this.width - 6;
-    }
-
-    @Override
-    protected void renderHeader(DrawContext context, int x, int y) {
-        TextRenderer textRenderer = this.client.textRenderer;
-        context.drawText(textRenderer, NAME_TEXT, x + 5, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, YAW_TEXT, x + 5 + 5 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, PITCH_TEXT, x + 5 + 7 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, ICON_TEXT, x + 5 + 9 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
-        context.drawText(textRenderer, COLOR_TEXT, x + 5 + 11 * this.getRowWidth() / 17, y + (20 - textRenderer.fontHeight) / 2, Colors.WHITE, true);
     }
 
     public abstract static class AbstractEntry extends ElementListWidget.Entry<AbstractEntry> {
@@ -112,6 +103,48 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
             widget.setX(x);
             widget.setY(y);
             widget.render(context, mouseX, mouseY, tickDelta);
+        }
+    }
+
+    public class Header extends AbstractEntry {
+        private final Screen parent;
+        private final TextWidget nameText;
+        private final TextWidget yawText;
+        private final TextWidget pitchText;
+        private final TextWidget iconText;
+        private final TextWidget colorText;
+
+        public Header(Screen parent, Text nameText, Text yawText, Text pitchText, Text iconText, Text colorText) {
+            this.parent = parent;
+            this.nameText = new TextWidget(nameText, parent.getTextRenderer());
+            this.yawText = new TextWidget(yawText, parent.getTextRenderer());
+            this.pitchText = new TextWidget(pitchText, parent.getTextRenderer());
+            this.iconText = new TextWidget(iconText, parent.getTextRenderer());
+            this.colorText = new TextWidget(colorText, parent.getTextRenderer());
+        }
+
+        @Override
+        public List<? extends Selectable> selectableChildren() {
+            return List.of(nameText, yawText, pitchText, iconText, colorText);
+        }
+
+        @Override
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float deltaTicks) {
+            this.nameText.setPosition(this.getContentX() + 5, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.nameText.render(context, mouseX, mouseY, deltaTicks);
+            this.yawText.setPosition(this.getContentX() + 5 + 5 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.yawText.render(context, mouseX, mouseY, deltaTicks);
+            this.pitchText.setPosition(this.getContentX() + 5 + 7 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.pitchText.render(context, mouseX, mouseY, deltaTicks);
+            this.iconText.setPosition(this.getContentX() + 5 + 9 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.iconText.render(context, mouseX, mouseY, deltaTicks);
+            this.colorText.setPosition(this.getContentX() + 5 + 11 * this.getContentWidth() / 17, this.getContentY() + (20 - this.parent.getTextRenderer().fontHeight) / 2);
+            this.colorText.render(context, mouseX, mouseY, deltaTicks);
+        }
+
+        @Override
+        public List<? extends Element> children() {
+            return List.of(this.nameText, this.yawText, this.pitchText, this.iconText, this.colorText);
         }
     }
 
@@ -268,7 +301,12 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            int x = this.getContentX();
+            int y = this.getContentY();
+            int entryWidth = this.getContentWidth();
+            int entryHeight = this.getContentHeight();
+
             if (hovered) {
                 context.fill(x, y, x + entryWidth, y + entryHeight, HOVERED_COLOR);
             }
@@ -345,11 +383,11 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (super.mouseClicked(mouseX, mouseY, button)) {
+        public boolean mouseClicked(Click click, boolean doubled) {
+            if (super.mouseClicked(click, doubled)) {
                 return true;
             }
-            if (!this.editing && button == 0) {
+            if (!this.editing && click.button() == 0) {
                 AngleSnapListWidget.this.parent.snap(this.angle);
                 return true;
             }
@@ -365,8 +403,8 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
         }
 
         @Override
-        public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            this.renderWidgetAt(context, mouseX, mouseY, tickDelta, this.add, x + 5, y + (entryHeight - this.client.textRenderer.fontHeight) / 2);
+        public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            this.renderWidgetAt(context, mouseX, mouseY, tickDelta, this.add, this.getContentX() + 5, this.getContentY() + (this.getContentHeight() - this.client.textRenderer.fontHeight) / 2);
         }
 
         private void add() {
@@ -378,8 +416,8 @@ public class AngleSnapListWidget extends ElementListWidget<AngleSnapListWidget.A
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            super.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(Click click, boolean doubled) {
+            super.mouseClicked(click, doubled);
             return false;
         }
     }
