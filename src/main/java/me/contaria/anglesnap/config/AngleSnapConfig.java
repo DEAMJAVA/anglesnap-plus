@@ -8,10 +8,10 @@ import me.contaria.anglesnap.AngleEntry;
 import me.contaria.anglesnap.AngleSnap;
 import me.contaria.anglesnap.CameraPosEntry;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
@@ -22,9 +22,9 @@ import java.util.*;
 
 public class AngleSnapConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().serializeNulls().create();
-    private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve("anglesnap");
-    private static final Path CONFIG_PATH = CONFIG_DIR.resolve("anglesnap.json");
-    private static final Path OLD_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("anglesnap.json");
+    private static final Path CONFIG_DIR = FabricLoader.getInstance().getConfigDir().resolve(AngleSnap.MOD_ID);
+    private static final Path CONFIG_PATH = CONFIG_DIR.resolve(AngleSnap.MOD_ID + ".json");
+    private static final Path OLD_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(AngleSnap.MOD_ID + ".json");
 
     private final Map<String, Option<?>> options;
 
@@ -262,10 +262,10 @@ public class AngleSnapConfig {
             AngleSnap.LOGGER.warn("[AngleSnap] Tried to create angle but no angles are currently loaded!");
             return null;
         }
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         AngleEntry angle = new AngleEntry(
-                player != null ? (int) (MathHelper.wrapDegrees(player.getYaw()) * 10.0f) / 10.0f : 0.0f,
-                player != null ? (int) (MathHelper.wrapDegrees(player.getPitch()) * 10.0f) / 10.0f : 0.0f
+                player != null ? (int) (Mth.wrapDegrees(player.getYRot()) * 10.0f) / 10.0f : 0.0f,
+                player != null ? (int) (Mth.wrapDegrees(player.getXRot()) * 10.0f) / 10.0f : 0.0f
         );
         this.angles.add(angle);
         return angle;
@@ -292,11 +292,11 @@ public class AngleSnapConfig {
             AngleSnap.LOGGER.warn("[AngleSnap] Tried to create camera position but no positions are currently loaded!");
             return null;
         }
-        Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.mainCamera().position();
         CameraPosEntry pos = new CameraPosEntry(
-                (int) (cameraPos.getX() * 100.0) / 100.0,
-                (int) (cameraPos.getY() * 100.0) / 100.0,
-                (int) (cameraPos.getZ() * 100.0) / 100.0
+                (int) (cameraPos.x() * 100.0) / 100.0,
+                (int) (cameraPos.y() * 100.0) / 100.0,
+                (int) (cameraPos.z() * 100.0) / 100.0
         );
         this.cameraPositions.add(pos);
         return pos;
