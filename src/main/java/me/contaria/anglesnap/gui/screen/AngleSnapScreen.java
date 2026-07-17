@@ -26,7 +26,7 @@ public class AngleSnapScreen extends Screen {
     @Override
     protected void init() {
         int i = this.font.width(this.title);
-        this.addRenderableWidget(new StringWidget(this.width / 2 + i / 2, 10, this.width, 15, this.title, this.font));
+        this.addRenderableWidget(new StringWidget(this.width / 2 - i / 2, 10, this.width, 15, this.title, this.font));
         this.addRenderableWidget(new IconButtonWidget(this.width - 26, 10, CONFIGURE_TEXT, button -> Minecraft.getInstance().setScreenAndShow(new AngleSnapConfigScreen(this)), CONFIGURE_TEXTURE));
         this.addRenderableWidget(new AngleSnapListWidget(this.minecraft, this.width, this.height - 70, 35, this));
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose()).bounds(this.width / 2 - 100, this.height - 27, 200, 20).build());
