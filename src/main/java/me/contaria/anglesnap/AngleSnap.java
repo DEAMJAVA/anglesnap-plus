@@ -1,5 +1,6 @@
 package me.contaria.anglesnap;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.contaria.anglesnap.config.AngleSnapConfig;
 import me.contaria.anglesnap.renderer.IconFeatureRenderer;
@@ -31,7 +32,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,19 +59,19 @@ public class AngleSnap implements ClientModInitializer {
 
         openMenu = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "anglesnap.key.openmenu",
-                GLFW.GLFW_KEY_F6,
+                InputConstants.KEY_F6,
                 keybindCategory
         ));
         openOverlay = KeyMappingHelper.registerKeyMapping(new ToggleKeyMapping(
                 "anglesnap.key.openoverlay",
-                GLFW.GLFW_KEY_F7,
+                InputConstants.KEY_F7,
                 keybindCategory,
                 () -> true,
                 true
         ));
         cameraPositions = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "anglesnap.key.camerapositions",
-                GLFW.GLFW_KEY_F8,
+                InputConstants.KEY_F8,
                 keybindCategory
         ));
 
@@ -136,7 +136,7 @@ public class AngleSnap implements ClientModInitializer {
 
         poseStack.pushPose();
         poseStack.translate(pos.x(), pos.y(), pos.z());
-        poseStack.mulPose(rotation);
+        poseStack.rotate(rotation);
         poseStack.scale(scale, -scale, scale);
 
         RenderType layer = RenderTypes.entityTranslucent(angle.getIcon());
@@ -162,7 +162,7 @@ public class AngleSnap implements ClientModInitializer {
 
         poseStack.pushPose();
         poseStack.translate(pos.x(), pos.y(), pos.z());
-        poseStack.mulPose(rotation);
+        poseStack.rotate(rotation);
         poseStack.scale(scale, -scale, scale);
 
         Minecraft client = Minecraft.getInstance();
@@ -172,14 +172,17 @@ public class AngleSnap implements ClientModInitializer {
 
         TextFeatureRenderer.Submit submit = new TextFeatureRenderer.Submit(
                 new Matrix4f(poseStack.last().pose()),
-                x, -15.0f,
-                Component.literal(angle.name).getVisualOrderText(),
-                false,
                 Font.DisplayMode.SEE_THROUGH,
                 15,
-                CommonColors.WHITE,
-                backgroundColor,
-                0
+                new TextFeatureRenderer.Content.Text(
+                        x,
+                        -15f,
+                        Component.literal(angle.name).getVisualOrderText(),
+                        false,
+                        CommonColors.WHITE,
+                        backgroundColor,
+                        0
+                )
         );
 
         collector.submitCustom(SubmitRenderPhases.AFTER_TERRAIN, submit);
