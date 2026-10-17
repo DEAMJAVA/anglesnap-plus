@@ -1,5 +1,6 @@
 package me.contaria.anglesnap.gui.camerasnap;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import me.contaria.anglesnap.AngleSnap;
 import me.contaria.anglesnap.CameraPosEntry;
 import me.contaria.anglesnap.gui.screen.IconButtonWidget;
@@ -329,7 +330,7 @@ public class CameraSnapListWidget extends ContainerObjectSelectionList<CameraSna
             if (super.mouseClicked(click, doubled)) {
                 return true;
             }
-            if (!this.editing && click.button() == 0) {
+            if (!this.editing && click.button() == InputConstants.MOUSE_BUTTON_LEFT) {
                 AngleSnap.currentCameraPos = this.pos;
                 return true;
             }

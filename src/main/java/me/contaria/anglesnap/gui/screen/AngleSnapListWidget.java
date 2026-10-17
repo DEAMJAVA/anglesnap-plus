@@ -1,5 +1,6 @@
 package me.contaria.anglesnap.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import me.contaria.anglesnap.AngleEntry;
 import me.contaria.anglesnap.AngleSnap;
 import net.minecraft.client.Minecraft;
@@ -401,7 +402,8 @@ public class AngleSnapListWidget extends ContainerObjectSelectionList<AngleSnapL
             if (super.mouseClicked(click, doubled)) {
                 return true;
             }
-            if (!this.editing && click.button() == 0) {
+
+            if (!this.editing && click.button() == InputConstants.MOUSE_BUTTON_LEFT) {
                 AngleSnapListWidget.this.parent.snap(this.angle);
                 return true;
             }
